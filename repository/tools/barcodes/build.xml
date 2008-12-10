@@ -1,12 +1,25 @@
 <project name="barcodeCopy">
+	<target name="init" description="initialization">
+		
+		<path id="classpath">
+			<fileset dir="lib-common">
+				<include name="**/*.jar"/>
+			</fileset>
+			<fileset dir="lib">
+				<include name="**/*.jar"/>
+			</fileset>
+		</path>
 
+	</target>
+				
+				
     <target name="clean">
         <delete dir="build"/>
     </target>
 
-    <target name="compile" depends="clean">
+    <target name="compile" depends="clean,init" >
         <mkdir dir="build/classes"/>
-        <javac srcdir="src" destdir="build/classes"/>
+        <javac srcdir="src" destdir="build/classes" classpathref="classpath" debug="true" debuglevel="lines,source"/>	
     </target>
 
     <target name="jar" depends="compile">
@@ -14,12 +27,17 @@
         <jar destfile="build/jar/BarcodeCopy.jar" basedir="build/classes">
             <manifest>
                 <attribute name="Main-Class" value="barcodeCopy.BarcodeCopy"/>
+            	<!--<attribute name="Class-Path" value="barcode4j.jar"/>-->
             </manifest>
         </jar>
+    	<copy todir="build/jar">
+    	       <fileset dir="lib"/>
+    	</copy>
     </target>
 
     <target name="run" depends="jar">
         <java jar="build/jar/barcodeCopy.jar" fork="true"/>
+
     </target>
 
 </project>

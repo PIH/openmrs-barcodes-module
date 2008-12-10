@@ -1,6 +1,5 @@
 package barcodeCopy;
 
-import java.awt.Cursor;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -9,9 +8,22 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 
+import javax.print.Doc;
+import javax.print.DocFlavor;
+import javax.print.DocPrintJob;
+import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.SimpleDoc;
+import javax.print.StreamPrintServiceFactory;
+import javax.print.attribute.PrintServiceAttribute;
+import javax.print.attribute.standard.PrinterName;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -29,11 +41,9 @@ public class BarcodeCopy extends JPanel implements ActionListener
   protected static JButton jbuttonPrint;
   protected static JTextField idText;
   protected static JTextField copiesText;
-  protected static JComboBox type;
-  private int[] messageTypes ={JOptionPane.PLAIN_MESSAGE};
+  protected static StreamPrintServiceFactory spsf;
   
   protected static JFrame myWindow;
-  private String newline = "\n";
   GridLayout experimentLayout = new GridLayout(0,2);
 
 
@@ -48,8 +58,8 @@ public class BarcodeCopy extends JPanel implements ActionListener
 
       JLabel idTextLabel = new JLabel("ID");
       JPanel idTextPanel = new JPanel();
-      idText = new JTextField(8);
-      idText.setDocument(new JTextFieldLimit(8));
+      idText = new JTextField(9);
+      idText.setDocument(new JTextFieldLimit(9));
       idTextPanel.add(idTextLabel);
       idTextPanel.add(idText);
       
@@ -78,17 +88,8 @@ public class BarcodeCopy extends JPanel implements ActionListener
       //add(jbuttonPrint);
       jbuttonPrint.addActionListener(this);
       jbuttonPrintPanel.add(jbuttonPrint);
-      
-      
-      
-      JLabel idTipoLabel = new JLabel("Tipo");
-      JPanel tippPanel = new JPanel();
-      String[] petStrings = { "Bird", "Cat", "Dog", "Rabbit", "Pig" };
-      type = new JComboBox(petStrings);
-      type.setSelectedIndex(4);
-      type.addActionListener(this);
-      tippPanel.add(idTipoLabel);
-      tippPanel.add(type);
+     
+
 
       JPanel controls = new JPanel();
       controls.setLayout(new GridBagLayout());
@@ -113,7 +114,6 @@ public class BarcodeCopy extends JPanel implements ActionListener
       c5.gridy = 2;
       c5.gridwidth = 2;
       c5.anchor = GridBagConstraints.LINE_START;
-      controls.add(tippPanel, c5);
       controls.add(idTextPanel, c);
       controls.add(copiesTextPanel, c2);
       controls.add(jbuttonColsePanel, c3);
@@ -160,12 +160,148 @@ public class BarcodeCopy extends JPanel implements ActionListener
           System.exit(0);
       } else if ("Print".equals(e.getActionCommand())){
           
-          //HERE's a basic message box:
-          JLabel  message = new JLabel("Message to appear inside of dialog box");
-          JOptionPane.showMessageDialog(this, message, "test", 0);
+          String id = this.idText.getText();
+          String numCopies = this.copiesText.getText();
+        
+          PrintService psZebra = null;
+          try{
+            //GET PRINTER             
+              String sPrinterName = null;
+              PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
+              for (int i = 0; i < services.length; i++) {
+                  PrintServiceAttribute attr = services[i].getAttribute(PrinterName.class);
+                  sPrinterName = ((PrinterName)attr).getValue();
+                  if (sPrinterName.toLowerCase().indexOf("zebra") >= 0) {
+                      psZebra = services[i];
+                      break;
+                  }
+              }
+              if (psZebra == null) {
+                  System.out.println("Zebra printer is not found.");
+                  return;
+              }  
+          } catch (Exception eFindPrintService){
+              HandleError(eFindPrintService);
+          }
           
+          
+//               //GET ALL DOCTYPES SUPPORTED BY PRINTER
+//              DocFlavor[] flavors = psZebra.getSupportedDocFlavors();
+//              for (int i = 0; i <flavors.length; i++){
+//                  System.out.println(flavors[i].getMimeType() + " " + flavors[i].getRepresentationClassName());
+//              }
+              
+
+//            //Get all supported attributes  
+//            Attribute[] ats = psZebra.getAttributes().toArray();
+//            for (int i = 0; i <ats.length; i++){
+//                System.out.println(ats[i].getName());
+//            }
+          
+            
+            
+            
+            
+//            System.out.println("PRINTER DIMENSIONS height " + height + " WIDTH " + width);
+//            System.out.println("PRINTER IMAGEABLE DIMENSIONS height " + pf.getImageableHeight() + " width " + pf.getImageableWidth());
+            
+              
+
+                              
+                  //HERE's how you make a barcode
+                  
+//                  Code39Bean bean = new Code39Bean();
+//                  final int dpi = 150;
+//                  bean.setModuleWidth(UnitConv.in2mm(1.0f / dpi));
+//                  bean.setWideFactor(3);
+//                  bean.doQuietZone(true);
+//                  //bean.setHeight(height - (0.2*height));
+//
+//                  //File outputFile = new File("out.jpg");
+//                  //OutputStream out = new FileOutputStream(outputFile);
+//                  //BitmapCanvasProvider canvas = new BitmapCanvasProvider(out, "image/jpeg", dpi, BufferedImage.TYPE_BYTE_BINARY, false, 0);
+//                  //bean.generateBarcode(canvas,id);
+//                  //canvas.finish();
+//                  
+//                  //BarcodeDimension bd = canvas.getDimensions();
+//                  //paper.setImageableArea(this.getX(), this.getY(), bd.getWidthPlusQuiet(), bd.getHeightPlusQuiet());
+//                  //System.out.println("BARCODE DIMENSIONS height " + bd.getHeightPlusQuiet() + " width " + bd.getWidthPlusQuiet());
+//                  
+//                  File outputFile = new File("testDT.txt");
+//                  OutputStream outStr = new FileOutputStream(outputFile);
+//                  String cmd = "N"+ "\015\012" + "B10,10,0,3,3,7,200,B,\"998152-001\""+ "\015\012" + "PA\015\012" ;
+//                  outStr.write(cmd.getBytes());
+//                  outStr.close();
+//                  
+//                  DocFlavor flavor = new DocFlavor("image/jpeg","java.io.InputStream");
+//                  Doc doc = new SimpleDoc(new FileInputStream(outputFile.getAbsoluteFile()), flavor, null);
+                  
+                  
+
+                  try {    
+                      
+                      if (id == null || id.equals(""))
+                          throw new RuntimeException("Falta ID.");
+                      if (numCopies == null || numCopies.equals(""))
+                              throw new RuntimeException("Falta numero de copias.");  
+                      
+                      Integer numCopiesInt = Integer.valueOf(numCopies.trim());
+                      
+                      PrinterJob pj = PrinterJob.getPrinterJob();
+                      pj.setPrintService(psZebra);
+                      PageFormat pf = pj.defaultPage();
+                      
+                      //we can use these if we need these to set heights according to paper height
+                      Paper paper = pf.getPaper(); 
+                      double height = pf.getHeight();
+                      double width = pf.getWidth(); 
+                      
+                      StringBuffer myString = new StringBuffer("N" + "\015\012" + "B20,20,0,3,3,7,50,B,\"" + id + "\"" + "\015\012" + "P" + numCopiesInt.intValue() + "\015\012"); 
+                      DocFlavor flavor2 = DocFlavor.BYTE_ARRAY.AUTOSENSE;
+                      
+                      Doc doc2 = new SimpleDoc(myString.toString().getBytes(), flavor2, null);
+                      
+                      
+                      DocPrintJob job = psZebra.createPrintJob();
+                   
+                      //PrintJobWatcher pjw  = new PrintJobWatcher(job);
+                      job.print(doc2, null);
+                      //pjw.waitForDone();
+
+                      
+                  } catch (PrintException ex) {
+                      HandleError(ex);
+                  } catch (PrinterException ex) {
+                      HandleError(ex);
+                  } catch (NumberFormatException ex){
+                      HandleNumberFormatError(ex);    
+                  } catch (Exception ex){
+                      HandleError(ex);
+                  }
+                  
       }
+    
   } 
+  
+  private void HandleError(Exception ex){
+      System.out.println("Error " + ex);
+      System.out.println(ex.getStackTrace());
+      ex.printStackTrace();
+      JLabel  message = new JLabel(ex.getLocalizedMessage());
+      JOptionPane.showMessageDialog(this, message, "test", 0);
+  }
+  
+  private void HandleNumberFormatError(Exception ex){
+      System.out.println("Error " + ex);
+      System.out.println(ex.getStackTrace());
+      ex.printStackTrace();
+      JLabel  message = new JLabel("Numero de copias no es un numero.");
+      JOptionPane.showMessageDialog(this, message, "test", 0);
+  }
+
+  
+
+
 
     
 }
