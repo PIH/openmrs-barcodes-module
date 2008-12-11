@@ -59,7 +59,7 @@ public class BarcodeCopy extends JPanel implements ActionListener
       JLabel idTextLabel = new JLabel("ID");
       JPanel idTextPanel = new JPanel();
       idText = new JTextField(9);
-      idText.setDocument(new JTextFieldLimit(9));
+      idText.setDocument(new JTextFieldLimit(10));
       idTextPanel.add(idTextLabel);
       idTextPanel.add(idText);
       
@@ -159,8 +159,9 @@ public class BarcodeCopy extends JPanel implements ActionListener
       if ("Close".equals(e.getActionCommand())) {
           System.exit(0);
       } else if ("Print".equals(e.getActionCommand())){
+         
           
-          String id = this.idText.getText();
+          String id = this.idText.getText().trim();
           String numCopies = this.copiesText.getText();
         
           PrintService psZebra = null;
@@ -238,12 +239,16 @@ public class BarcodeCopy extends JPanel implements ActionListener
                   
                   
 
-                  try {    
+                  try {
                       
+                      if (psZebra == null)
+                          throw new RuntimeException("No puede encontrar al impresora de codigo de barras");
                       if (id == null || id.equals(""))
                           throw new RuntimeException("Falta ID.");
                       if (numCopies == null || numCopies.equals(""))
                               throw new RuntimeException("Falta numero de copias.");  
+                      if (!id.toUpperCase().equals(id))
+                          throw new RuntimeException("El ID no puede contener letras minusculas.");
                       
                       Integer numCopiesInt = Integer.valueOf(numCopies.trim());
                       
@@ -264,9 +269,10 @@ public class BarcodeCopy extends JPanel implements ActionListener
                       
                       DocPrintJob job = psZebra.createPrintJob();
                    
-                      //PrintJobWatcher pjw  = new PrintJobWatcher(job);
+                      PrintJobWatcher pjw  = new PrintJobWatcher(job);
                       job.print(doc2, null);
-                      //pjw.waitForDone();
+                      System.out.println("PrintJobComplete");
+                      pjw.waitForDone();
 
                       
                   } catch (PrintException ex) {
