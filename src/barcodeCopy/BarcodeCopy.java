@@ -1,5 +1,6 @@
 package barcodeCopy;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -10,7 +11,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
-import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
 import javax.print.Doc;
@@ -28,7 +28,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JViewport;
 
 public class BarcodeCopy extends JPanel implements ActionListener
 
@@ -46,6 +49,8 @@ public class BarcodeCopy extends JPanel implements ActionListener
   protected static JFrame myWindow;
   GridLayout experimentLayout = new GridLayout(0,2);
 
+  //TODO
+  protected static JTextArea idPane;
 
 
   
@@ -56,12 +61,26 @@ public class BarcodeCopy extends JPanel implements ActionListener
     
       
 
-      JLabel idTextLabel = new JLabel("ID");
+      JLabel idTextLabel = new JLabel("IDs");
       JPanel idTextPanel = new JPanel();
-      idText = new JTextField(9);
-      idText.setDocument(new JTextFieldLimit(10));
+      //idText = new JTextField(9);
+      //idText.setDocument(new JTextFieldLimit(10));
       idTextPanel.add(idTextLabel);
-      idTextPanel.add(idText);
+    //idTextPanel.add(idText);
+      
+      
+      idPane = new JTextArea();
+      idPane.setLineWrap(true);
+      JScrollPane scrollPane = new JScrollPane(idPane);
+      scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+      JViewport viewport = scrollPane.getViewport();
+      //TODO:   we may need to do better with sizing after each ID
+      viewport.setPreferredSize(new Dimension(70,90));
+      idTextPanel.add(scrollPane);
+      viewport.revalidate();
+      viewport.updateUI();
+      
+      
       
       JLabel copiesTextLabel = new JLabel("Numero de copias");
       JPanel copiesTextPanel = new JPanel();
@@ -161,7 +180,14 @@ public class BarcodeCopy extends JPanel implements ActionListener
       } else if ("Print".equals(e.getActionCommand())){
          
           
-          String id = this.idText.getText().trim();
+          String id = this.idPane.getText().trim();
+          String[] ids;
+          if (id.contains("\n"))
+              ids = id.split("\n");  
+          else {
+              ids = new String[1];
+              ids[0] = id;
+          }    
           String numCopies = this.copiesText.getText();
         
           PrintService psZebra = null;
@@ -237,54 +263,71 @@ public class BarcodeCopy extends JPanel implements ActionListener
 //                  DocFlavor flavor = new DocFlavor("image/jpeg","java.io.InputStream");
 //                  Doc doc = new SimpleDoc(new FileInputStream(outputFile.getAbsoluteFile()), flavor, null);
                   
+          
+          //HERE:  validate all IDs
+          boolean runPrintJob = true;
+          try{
+              
+              if (!id.toUpperCase().equals(id))
+                  throw new RuntimeException("El ID " + id + " no puede contener letras minusculas.");
+              if (psZebra == null)
+                  throw new RuntimeException("No puede encontrar al impresora de codigo de barras.");
+              if (id == null || id.equals(""))
+                  throw new RuntimeException("Falta un ID.");
+              if (numCopies == null || numCopies.equals(""))
+                      throw new RuntimeException("Falta numero de copias.");
+              if (id.charAt(8) != '-' || id.length() != 10)
+                  throw new RuntimeException("El ID " + id + " no tiene un formato correcto.");
+              for (int j=0; j<ids.length; j++){
+                  id = ids[j];
+                  if (id.charAt(0) != 'M' && id.charAt(0) != 'C' && id.charAt(0) != 'I')
+                      throw new RuntimeException("El ID " + id + " tiene que empezar con I,C, o M.");
+              }    
+          
+          } catch (Exception ex){
+              HandleError(ex); 
+              runPrintJob = false;
+          }
                   
-
-                  try {
-                      
-                      if (psZebra == null)
-                          throw new RuntimeException("No puede encontrar al impresora de codigo de barras");
-                      if (id == null || id.equals(""))
-                          throw new RuntimeException("Falta ID.");
-                      if (numCopies == null || numCopies.equals(""))
-                              throw new RuntimeException("Falta numero de copias.");  
-                      if (!id.toUpperCase().equals(id))
-                          throw new RuntimeException("El ID no puede contener letras minusculas.");
-                      
-                      Integer numCopiesInt = Integer.valueOf(numCopies.trim());
-                      
-                      PrinterJob pj = PrinterJob.getPrinterJob();
-                      pj.setPrintService(psZebra);
-                      PageFormat pf = pj.defaultPage();
-                      
-                      //we can use these if we need these to set heights according to paper height
-                      Paper paper = pf.getPaper(); 
-                      double height = pf.getHeight();
-                      double width = pf.getWidth(); 
-                      
-                      StringBuffer myString = new StringBuffer("N" + "\015\012" + "B20,20,0,3,3,7,50,B,\"" + id + "\"" + "\015\012" + "P" + numCopiesInt.intValue() + "\015\012"); 
-                      DocFlavor flavor2 = DocFlavor.BYTE_ARRAY.AUTOSENSE;
-                      
-                      Doc doc2 = new SimpleDoc(myString.toString().getBytes(), flavor2, null);
-                      
-                      
-                      DocPrintJob job = psZebra.createPrintJob();
-                   
-                      PrintJobWatcher pjw  = new PrintJobWatcher(job);
-                      job.print(doc2, null);
-                      System.out.println("PrintJobComplete");
-                      pjw.waitForDone();
-
-                      
-                  } catch (PrintException ex) {
-                      HandleError(ex);
-                  } catch (PrinterException ex) {
-                      HandleError(ex);
-                  } catch (NumberFormatException ex){
-                      HandleNumberFormatError(ex);    
-                  } catch (Exception ex){
-                      HandleError(ex);
-                  }
-                  
+          if (runPrintJob){
+                for (int j=0; j<ids.length; j++){
+                      id = ids[j];
+                      try {
+                          
+                          Integer numCopiesInt = Integer.valueOf(numCopies.trim());
+                          
+                          PrinterJob pj = PrinterJob.getPrinterJob();
+                          pj.setPrintService(psZebra);
+                          PageFormat pf = pj.defaultPage();
+                          
+                          //we can use these if we need these to set heights according to paper height
+                          Paper paper = pf.getPaper(); 
+                          double height = pf.getHeight();
+                          double width = pf.getWidth(); 
+                          
+                          StringBuffer myString = new StringBuffer("N" + "\015\012" + "B20,20,0,3,3,7,50,B,\"" + id + "\"" + "\015\012" + "P" + numCopiesInt.intValue() + "\015\012"); 
+                          DocFlavor flavor2 = DocFlavor.BYTE_ARRAY.AUTOSENSE;
+                          
+                          Doc doc2 = new SimpleDoc(myString.toString().getBytes(), flavor2, null);
+                          
+                          
+                          DocPrintJob job = psZebra.createPrintJob();
+                          PrintJobWatcher pjw  = new PrintJobWatcher(job);
+                         job.print(doc2, null);
+                          System.out.println("PrintJobComplete");
+                          //TODO:  turn this on and remove the runtime exception, and turn on the printException
+                         pjw.waitForDone();
+                          throw new RuntimeException(String.valueOf(id));
+                          
+                          
+                     } catch (PrintException ex) {
+                        HandleError(ex);
+                        break;
+                      } catch (Exception ex){
+                          HandleError(ex);
+                      }
+                } 
+          }
       }
     
   } 
