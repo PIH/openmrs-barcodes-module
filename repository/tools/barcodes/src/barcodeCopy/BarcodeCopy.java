@@ -1,6 +1,7 @@
 package barcodeCopy;
 
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -71,11 +72,12 @@ public class BarcodeCopy extends JPanel implements ActionListener
       
       idPane = new JTextArea();
       idPane.setLineWrap(true);
+      idPane.setFont(new Font("Courier New", Font.PLAIN, 12));
       JScrollPane scrollPane = new JScrollPane(idPane);
       scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
       JViewport viewport = scrollPane.getViewport();
       //TODO:   we may need to do better with sizing after each ID
-      viewport.setPreferredSize(new Dimension(70,90));
+      viewport.setPreferredSize(new Dimension(90,90));
       idTextPanel.add(scrollPane);
       viewport.revalidate();
       viewport.updateUI();
@@ -267,21 +269,20 @@ public class BarcodeCopy extends JPanel implements ActionListener
           //HERE:  validate all IDs
           boolean runPrintJob = true;
           try{
-              
-              if (!id.toUpperCase().equals(id))
-                  throw new RuntimeException("El ID " + id + " no puede contener letras minusculas.");
+             
               if (psZebra == null)
                   throw new RuntimeException("No puede encontrar al impresora de codigo de barras.");
               if (id == null || id.equals(""))
                   throw new RuntimeException("Falta un ID.");
               if (numCopies == null || numCopies.equals(""))
                       throw new RuntimeException("Falta numero de copias.");
-              if (id.charAt(8) != '-' || id.length() != 10)
-                  throw new RuntimeException("El ID " + id + " no tiene un formato correcto.");
               for (int j=0; j<ids.length; j++){
-                  id = ids[j];
-                  if (id.charAt(0) != 'M' && id.charAt(0) != 'C' && id.charAt(0) != 'I')
+                  if (!(ids[j].charAt(0) == 'M' || ids[j].charAt(0) == 'C' || ids[j].charAt(0) == 'I'))
                       throw new RuntimeException("El ID " + id + " tiene que empezar con I,C, o M.");
+                  if (ids[j].charAt(8) != '-' || ids[j].length() != 10)
+                      throw new RuntimeException("El ID " + id + " no tiene un formato correcto.");
+                  if (!ids[j].toUpperCase().equals(ids[j]))
+                      throw new RuntimeException("El ID " + id + " no puede contener letras minusculas.");
               }    
           
           } catch (Exception ex){
@@ -309,15 +310,16 @@ public class BarcodeCopy extends JPanel implements ActionListener
                           DocFlavor flavor2 = DocFlavor.BYTE_ARRAY.AUTOSENSE;
                           
                           Doc doc2 = new SimpleDoc(myString.toString().getBytes(), flavor2, null);
-                          
+                   
                           
                           DocPrintJob job = psZebra.createPrintJob();
                           PrintJobWatcher pjw  = new PrintJobWatcher(job);
                          job.print(doc2, null);
-                          System.out.println("PrintJobComplete");
+                          //System.out.println("PrintJobComplete");
                           //TODO:  turn this on and remove the runtime exception, and turn on the printException
                          pjw.waitForDone();
-                          throw new RuntimeException(String.valueOf(id));
+                          //I was using this as a proxy for sending the print job to the printer:
+                          //throw new RuntimeException(String.valueOf(id));
                           
                           
                      } catch (PrintException ex) {
