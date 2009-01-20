@@ -13,6 +13,8 @@ import java.awt.event.KeyEvent;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
 import java.awt.print.PrinterJob;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.print.Doc;
 import javax.print.DocFlavor;
@@ -25,6 +27,7 @@ import javax.print.StreamPrintServiceFactory;
 import javax.print.attribute.PrintServiceAttribute;
 import javax.print.attribute.standard.PrinterName;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -43,9 +46,13 @@ public class BarcodeCopy extends JPanel implements ActionListener
   final static long serialVersionUID = 23497343;  
   protected static JButton jbuttonClose;
   protected static JButton jbuttonPrint;
-  protected static JTextField idText;
+  protected static JTextField fecha;
   protected static JTextField copiesText;
+  protected static JCheckBox checkbox;
   protected static StreamPrintServiceFactory spsf;
+  protected static JLabel fechaLabel;
+  protected static JPanel controls;
+  protected static JFrame frame;
   
   protected static JFrame myWindow;
   GridLayout experimentLayout = new GridLayout(0,2);
@@ -64,10 +71,7 @@ public class BarcodeCopy extends JPanel implements ActionListener
 
       JLabel idTextLabel = new JLabel("IDs");
       JPanel idTextPanel = new JPanel();
-      //idText = new JTextField(9);
-      //idText.setDocument(new JTextFieldLimit(10));
       idTextPanel.add(idTextLabel);
-    //idTextPanel.add(idText);
       
       
       idPane = new JTextArea();
@@ -84,16 +88,16 @@ public class BarcodeCopy extends JPanel implements ActionListener
       
       
       
+      
       JLabel copiesTextLabel = new JLabel("Numero de copias");
-      JPanel copiesTextPanel = new JPanel();
+      JPanel copiesTextPanel = new JPanel(true);
       copiesText = new JTextField(2);
       copiesText.setDocument(new JTextFieldLimit(2));
       copiesText.setText(" 1");
       copiesTextPanel.add(copiesTextLabel);
       copiesTextPanel.add(copiesText);
-      
-     
-      
+  
+              
       JPanel jbuttonColsePanel = new JPanel();
       jbuttonClose = new JButton("Cerrar");
       jbuttonClose.setActionCommand("Close");
@@ -104,15 +108,52 @@ public class BarcodeCopy extends JPanel implements ActionListener
       
       JPanel jbuttonPrintPanel = new JPanel();
       jbuttonPrint = new JButton("Imprimir");
-      jbuttonPrint.setActionCommand("Print");
       jbuttonPrint.setMnemonic(KeyEvent.VK_P);
       //add(jbuttonPrint);
       jbuttonPrint.addActionListener(this);
+      jbuttonPrint.setActionCommand("Print");
       jbuttonPrintPanel.add(jbuttonPrint);
      
 
+    //Here's the laboratory part:
+      JPanel labPanel = new JPanel();
+      labPanel.setLayout(new GridBagLayout());
+      checkbox = new JCheckBox("", false);
+      checkbox.addActionListener(this);
+      checkbox.setActionCommand("laboratorio");
+      GridBagConstraints clab = new GridBagConstraints();
+      clab.gridx = 1;
+      clab.gridy = 1;
+      clab.anchor = GridBagConstraints.LINE_START;
+      clab.insets = new Insets(0, 10, 0, 10);
+      GridBagConstraints clab2 = new GridBagConstraints();
+      clab2.gridx = 2;
+      clab2.gridy = 1;
+      clab2.anchor = GridBagConstraints.LINE_START;
+      clab2.insets = new Insets(0, 10, 0, 10);
+      labPanel.add(new JLabel("Formato Laboratorio"), clab);
+      labPanel.add(checkbox, clab2);
+      GridBagConstraints clab3 = new GridBagConstraints();
+      clab3.gridx = 1;
+      clab3.gridy = 2;
+      clab3.anchor = GridBagConstraints.LINE_START;
+      clab3.insets = new Insets(0, 10, 0, 10);
+      fechaLabel = new JLabel("Fecha (dd/MM/yy)");
+      fechaLabel.setVisible(false);
+      labPanel.add(fechaLabel, clab3);
+      //add the fecha
+      fecha = new JTextField(8);
+      fecha.setDocument(new JTextFieldLimit(8));
+      GridBagConstraints clab4 = new GridBagConstraints();
+      clab4.gridx = 2;
+      clab4.gridy = 2;
+      clab4.anchor = GridBagConstraints.LINE_START;
+      clab4.insets = new Insets(0, 10, 0, 10);
+      fecha.setVisible(false);
+      labPanel.add(fecha, clab4);
+      
 
-      JPanel controls = new JPanel();
+      controls = new JPanel();
       controls.setLayout(new GridBagLayout());
       GridBagConstraints c = new GridBagConstraints();
       c.gridx = 1;
@@ -135,10 +176,12 @@ public class BarcodeCopy extends JPanel implements ActionListener
       c5.gridy = 2;
       c5.gridwidth = 2;
       c5.anchor = GridBagConstraints.LINE_START;
+      c5.insets = new Insets(10, 10, 10, 10);
       controls.add(idTextPanel, c);
       controls.add(copiesTextPanel, c2);
       controls.add(jbuttonColsePanel, c3);
       controls.add(jbuttonPrintPanel, c4);
+      controls.add(labPanel, c5);
       
       add(controls);
       //set cursor in ID field:
@@ -150,7 +193,7 @@ public class BarcodeCopy extends JPanel implements ActionListener
   private static void createAndShowGUI() {
 
       //Create and set up the window.
-      JFrame frame = new JFrame("Codigo De Barras");
+      frame = new JFrame("Codigo De Barras");
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       WindowDestroyer myListener = new WindowDestroyer();
       frame.addWindowListener(myListener);
@@ -306,7 +349,41 @@ public class BarcodeCopy extends JPanel implements ActionListener
                           double height = pf.getHeight();
                           double width = pf.getWidth(); 
                           
-                          StringBuffer myString = new StringBuffer("N" + "\015\012" + "B20,20,0,3,3,7,50,B,\"" + id + "\"" + "\015\012" + "P" + numCopiesInt.intValue() + "\015\012"); 
+
+                          String labStuff = "";
+                          if (checkbox.isSelected()){
+                              
+                              //TODO: validate fecha    
+                              
+                              SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy");
+                              try {
+                                  Date date = sdf.parse(fecha.getText());
+                                  fecha.setText(sdf.format(date));
+                              } catch (Exception ex) {
+                                  throw new RuntimeException("El formato de la fecha no es correcta. Por favor use 'dd/MM/yy'");
+                              }
+                              
+//                            Fecha
+//                            CC  RR     II   S     E    P
+//                            33  33     33   3     3
+//                            CC  RR     II   S     E    P
+//                            55  55     55   5     5
+//                            CC
+//                            66
+                              
+                              labStuff += "\015\012A30,90,0,3,1,1,N,\"" + fecha.getText() + "\"\015\012";
+                              labStuff += "\015\012A30,113,0,2,1,1,N,\"CC RR II S E P\"\015\012";
+                              labStuff += "\015\012A30,133,0,2,1,1,N,\"33 33 33 3 3\"\015\012";
+                              labStuff += "\015\012A30,153,0,2,1,1,N,\"CC RR II S E P\"\015\012";
+                              labStuff += "\015\012A30,173,0,2,1,1,N,\"55 55 55 5 5\"\015\012";
+                              labStuff += "\015\012A30,193,0,2,1,1,N,\"CC\"\015\012";
+                              labStuff += "\015\012A30,213,0,2,1,1,N,\"66\"\015\012";
+                              
+                          }
+                          
+                          StringBuffer myString = new StringBuffer("N\015\012" + "B30,20,0,1,1,6,40,B,\"" + id + "\"" + labStuff + "\015\012P" + numCopiesInt.intValue() + "\015\012");
+                          //StringBuffer myString = new StringBuffer("N\015\012" + labStuff + "\015\012P" + numCopiesInt.intValue() + "\015\012"); 
+                          //System.out.println("myString" + myString);
                           DocFlavor flavor2 = DocFlavor.BYTE_ARRAY.AUTOSENSE;
                           
                           Doc doc2 = new SimpleDoc(myString.toString().getBytes(), flavor2, null);
@@ -316,7 +393,6 @@ public class BarcodeCopy extends JPanel implements ActionListener
                           PrintJobWatcher pjw  = new PrintJobWatcher(job);
                          job.print(doc2, null);
                           //System.out.println("PrintJobComplete");
-                          //TODO:  turn this on and remove the runtime exception, and turn on the printException
                          pjw.waitForDone();
                           //I was using this as a proxy for sending the print job to the printer:
                           //throw new RuntimeException(String.valueOf(id));
@@ -329,6 +405,24 @@ public class BarcodeCopy extends JPanel implements ActionListener
                           HandleError(ex);
                       }
                 } 
+          }
+      } else if ("laboratorio".equals(e.getActionCommand())){
+          try {
+              if (checkbox.isSelected()){
+                  fecha.setVisible(true);
+                  fechaLabel.setVisible(true);
+                  frame.pack();
+              }
+                  
+              if (!checkbox.isSelected()){
+                  fecha.setVisible(false);
+                  fechaLabel.setVisible(false);
+                  frame.pack();
+              }
+                  
+              
+          } catch (Exception ex){
+              HandleError(ex);
           }
       }
     
