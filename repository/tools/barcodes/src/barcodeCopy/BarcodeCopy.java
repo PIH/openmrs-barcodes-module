@@ -364,20 +364,16 @@ public class BarcodeCopy extends JPanel implements ActionListener
                               }
                               
 //                            Fecha
-//                            CC  RR     II   S     E    P
-//                            33  33     33   3     3
-//                            CC  RR     II   S     E    P
-//                            55  55     55   5     5
-//                            CC
-//                            66
+//                            C R I S P E
+//                            3 5 6                              
                               
                               labStuff += "\015\012A30,90,0,3,1,1,N,\"" + fecha.getText() + "\"\015\012";
-                              labStuff += "\015\012A30,113,0,2,1,1,N,\"CC RR II S E P\"\015\012";
-                              labStuff += "\015\012A30,133,0,2,1,1,N,\"33 33 33 3 3\"\015\012";
-                              labStuff += "\015\012A30,153,0,2,1,1,N,\"CC RR II S E P\"\015\012";
-                              labStuff += "\015\012A30,173,0,2,1,1,N,\"55 55 55 5 5\"\015\012";
-                              labStuff += "\015\012A30,193,0,2,1,1,N,\"CC\"\015\012";
-                              labStuff += "\015\012A30,213,0,2,1,1,N,\"66\"\015\012";
+                              labStuff += "\015\012A30,113,0,2,1,1,N,\"C R I S P E\"\015\012";
+                              labStuff += "\015\012A30,133,0,2,1,1,N,\"3 5 6\"\015\012";
+//                              labStuff += "\015\012A30,153,0,2,1,1,N,\"CC RR II S E P\"\015\012";
+//                              labStuff += "\015\012A30,173,0,2,1,1,N,\"55 55 55 5 5\"\015\012";
+//                              labStuff += "\015\012A30,193,0,2,1,1,N,\"CC\"\015\012";
+//                              labStuff += "\015\012A30,213,0,2,1,1,N,\"66\"\015\012";
                               
                           }
                           
@@ -435,18 +431,5 @@ public class BarcodeCopy extends JPanel implements ActionListener
       JLabel  message = new JLabel(ex.getLocalizedMessage());
       JOptionPane.showMessageDialog(this, message, "test", 0);
   }
-  
-  private void HandleNumberFormatError(Exception ex){
-      System.out.println("Error " + ex);
-      System.out.println(ex.getStackTrace());
-      ex.printStackTrace();
-      JLabel  message = new JLabel("Numero de copias no es un numero.");
-      JOptionPane.showMessageDialog(this, message, "test", 0);
-  }
 
-  
-
-
-
-    
 }
