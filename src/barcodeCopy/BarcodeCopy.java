@@ -1,5 +1,6 @@
 package barcodeCopy;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -7,12 +8,21 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
 import java.awt.print.PrinterJob;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -30,8 +40,10 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -49,6 +61,7 @@ public class BarcodeCopy extends JPanel implements ActionListener
   protected static JTextField fecha;
   protected static JTextField copiesText;
   protected static JCheckBox checkbox;
+  protected static JPopupMenu rightClickMenu;
   protected static StreamPrintServiceFactory spsf;
   protected static JLabel fechaLabel;
   protected static JPanel controls;
@@ -65,15 +78,10 @@ public class BarcodeCopy extends JPanel implements ActionListener
   
   public BarcodeCopy()
   {
-    
-    
-      
-
       JLabel idTextLabel = new JLabel("IDs");
       JPanel idTextPanel = new JPanel();
       idTextPanel.add(idTextLabel);
-      
-      
+
       idPane = new JTextArea();
       idPane.setLineWrap(true);
       idPane.setFont(new Font("Courier New", Font.PLAIN, 12));
@@ -85,10 +93,37 @@ public class BarcodeCopy extends JPanel implements ActionListener
       idTextPanel.add(scrollPane);
       viewport.revalidate();
       viewport.updateUI();
+       
       
-      
-      
-      
+      rightClickMenu = new JPopupMenu();
+      rightClickMenu.setBorderPainted(false);
+      rightClickMenu.setBackground(Color.LIGHT_GRAY);
+      rightClickMenu.setBorder(null);
+      JMenuItem pasteClipboard = new JMenuItem("Pegar");
+      pasteClipboard.setBorderPainted(false);
+      pasteClipboard.addActionListener(this);
+      rightClickMenu.add(pasteClipboard);
+      MouseListener mouseListener = new MouseAdapter() {
+          private void showIfPopupTrigger(MouseEvent mouseEvent) {
+            if (mouseEvent.isPopupTrigger()) {
+                rightClickMenu.show(mouseEvent.getComponent(),
+                  mouseEvent.getX(),
+                  mouseEvent.getY());
+            }
+          }
+          public void mousePressed(MouseEvent mouseEvent) {
+            showIfPopupTrigger(mouseEvent);
+          }
+          public void mouseReleased(MouseEvent mouseEvent) {
+            showIfPopupTrigger(mouseEvent);
+          }
+        };
+        idPane.addMouseListener (mouseListener);
+        idPane.setSize(350, 250);
+        idPane.setVisible(true);
+
+
+
       JLabel copiesTextLabel = new JLabel("Numero de copias");
       JPanel copiesTextPanel = new JPanel(true);
       copiesText = new JTextField(2);
@@ -222,6 +257,8 @@ public class BarcodeCopy extends JPanel implements ActionListener
   public void actionPerformed(ActionEvent e) {
       if ("Close".equals(e.getActionCommand())) {
           System.exit(0);
+      } else if ("Pegar".equals(e.getActionCommand()))  {
+              idPane.setText(getClipboardContents());
       } else if ("Print".equals(e.getActionCommand())){
          
           
@@ -320,12 +357,14 @@ public class BarcodeCopy extends JPanel implements ActionListener
               if (numCopies == null || numCopies.equals(""))
                       throw new RuntimeException("Falta numero de copias.");
               for (int j=0; j<ids.length; j++){
-                  if (!(ids[j].charAt(0) == 'M' || ids[j].charAt(0) == 'C' || ids[j].charAt(0) == 'I'))
-                      throw new RuntimeException("El ID " + id + " tiene que empezar con I,C, o M.");
-                  if (ids[j].charAt(8) != '-' || ids[j].length() != 10)
-                      throw new RuntimeException("El ID " + id + " no tiene un formato correcto.");
+                  if (!(ids[j].charAt(0) == 'P' || ids[j].charAt(0) == 'M' || ids[j].charAt(0) == 'C' || ids[j].charAt(0) == 'I' || ids[j].charAt(0) == 'A' || ids[j].charAt(0) == 'N'))
+                      throw new RuntimeException("El ID " + id + " tiene que empezar con I,C,A,N,P, o M.");
                   if (!ids[j].toUpperCase().equals(ids[j]))
                       throw new RuntimeException("El ID " + id + " no puede contener letras minusculas.");
+                  if (ids.length == 10 && ids[j].charAt(0) != 'P' && (ids[j].charAt(8) != '-' || ids[j].length() != 10))
+                          throw new RuntimeException("El ID " + id + " no tiene un formato correcto.");
+                  if (ids[j].charAt(0) == 'P' && (ids[j].charAt(5) != '-' || ids[j].length() != 7))
+                      throw new RuntimeException("El ID " + id + " no tiene un formato correcto por PPD.");
               }    
           
           } catch (Exception ex){
@@ -356,11 +395,13 @@ public class BarcodeCopy extends JPanel implements ActionListener
                               //TODO: validate fecha    
                               
                               SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy");
-                              try {
-                                  Date date = sdf.parse(fecha.getText());
-                                  fecha.setText(sdf.format(date));
-                              } catch (Exception ex) {
-                                  throw new RuntimeException("El formato de la fecha no es correcta. Por favor use 'dd/MM/yy'");
+                              if (fecha.getText() != null && !fecha.getText().equals("")){
+                                  try {
+                                      Date date = sdf.parse(fecha.getText());
+                                      fecha.setText(sdf.format(date));
+                                  } catch (Exception ex) {
+                                      throw new RuntimeException("El formato de la fecha no es correcta. Por favor use 'dd/MM/yy'");
+                                  }
                               }
                               
 //                            Fecha
@@ -431,5 +472,33 @@ public class BarcodeCopy extends JPanel implements ActionListener
       JLabel  message = new JLabel(ex.getLocalizedMessage());
       JOptionPane.showMessageDialog(this, message, "test", 0);
   }
+  
+  public String getClipboardContents() {
+      String result = "";
+      Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+      //odd: the Object param of getContents is not currently used
+      Transferable contents = clipboard.getContents(null);
+      boolean hasTransferableText =
+        (contents != null) &&
+        contents.isDataFlavorSupported(DataFlavor.stringFlavor)
+      ;
+      if ( hasTransferableText ) {
+        try {
+          result = (String)contents.getTransferData(DataFlavor.stringFlavor);
+        }
+        catch (UnsupportedFlavorException ex){
+          //highly unlikely since we are using a standard DataFlavor
+          System.out.println(ex);
+          ex.printStackTrace();
+        }
+        catch (IOException ex) {
+          System.out.println(ex);
+          ex.printStackTrace();
+        }
+      }
+      return result;
+    }
+  
+    
 
 }
