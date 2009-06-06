@@ -19,8 +19,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.print.PageFormat;
-import java.awt.print.Paper;
 import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
