@@ -64,10 +64,13 @@ public class BarcodeCopy extends JPanel implements ActionListener
   protected static JLabel fechaLabel;
   protected static JPanel controls;
   protected static JFrame frame;
+ 
   
   //for sticker offsets
   protected static JLabel advancedLabel;
   protected static JTextField advancedText;
+  protected static JLabel advancedHeight;
+  protected static JTextField advancedHeightText;
   
   protected static JFrame myWindow;
   GridLayout experimentLayout = new GridLayout(0,2);
@@ -137,13 +140,23 @@ public class BarcodeCopy extends JPanel implements ActionListener
       //protected static JLabel advancedLabel;
       //protected static JTextField advancedText;
       JPanel advancedPanel = new JPanel(true);
-      advancedLabel = new JLabel("offset dpi (opcional)");
+      advancedLabel = new JLabel("offset dpi (opcional, predeterminado = 268)");
       advancedLabel.setForeground(Color.GRAY);
       advancedText = new JTextField(3);
       advancedText.setDocument(new JTextFieldLimit(3));
       advancedText.setForeground(Color.GRAY);
       advancedPanel.add(advancedLabel);
       advancedPanel.add(advancedText);
+      
+      JPanel advancedHeightPanel = new JPanel(true);
+      advancedHeight = new JLabel("altura offset dpi (opcional, predeterminado = 20)");
+      advancedHeight.setForeground(Color.GRAY);
+      advancedHeightText = new JTextField(2);
+      advancedHeightText.setDocument(new JTextFieldLimit(2));
+      advancedHeightText.setForeground(Color.GRAY);
+      advancedHeightPanel.add(advancedHeight);
+      advancedHeightPanel.add(advancedHeightText);
+    
       
       JPanel jbuttonColsePanel = new JPanel();
       jbuttonClose = new JButton("Cerrar");
@@ -212,11 +225,11 @@ public class BarcodeCopy extends JPanel implements ActionListener
       c2.anchor = GridBagConstraints.LINE_START;
       GridBagConstraints c3 = new GridBagConstraints();
       c3.gridx = 1;
-      c3.gridy = 4;
+      c3.gridy = 5;
       c3.insets = new Insets(20,0,0,0);
       GridBagConstraints c4 = new GridBagConstraints();
       c4.gridx = 2;
-      c4.gridy = 4;
+      c4.gridy = 5;
       c4.insets = new Insets(20,0,0,0);
       GridBagConstraints c5 = new GridBagConstraints();
       c5.gridx = 1;
@@ -230,6 +243,14 @@ public class BarcodeCopy extends JPanel implements ActionListener
       c6.gridwidth = 2;
       c6.anchor = GridBagConstraints.LINE_START;
       c6.insets = new Insets(0, 20, 0, 0);
+      GridBagConstraints c7 = new GridBagConstraints();
+      c7.gridx = 1;
+      c7.gridy = 4;
+      c7.gridwidth = 2;
+      c7.anchor = GridBagConstraints.LINE_START;
+      c7.insets = new Insets(0, 20, 0, 0);
+      
+      //advancedHeightPanel
       
       controls.add(idTextPanel, c);
       controls.add(copiesTextPanel, c2);
@@ -237,6 +258,8 @@ public class BarcodeCopy extends JPanel implements ActionListener
       controls.add(jbuttonPrintPanel, c4);
       controls.add(labPanel, c5);
       controls.add(advancedPanel, c6);
+      controls.add(advancedHeightPanel, c7);
+      
       
       add(controls);
       //set cursor in ID field:
@@ -290,9 +313,9 @@ public class BarcodeCopy extends JPanel implements ActionListener
               ids = new String[1];
               ids[0] = id;
           }    
-          String numCopies = this.copiesText.getText();
-          String offset = this.advancedText.getText();
-          
+          String numCopies = this.copiesText.getText().trim();
+          String offset = this.advancedText.getText().trim();
+          String heightString = this.advancedHeightText.getText().trim();
           PrintService psZebra = null;
           try{
             //GET PRINTER             
@@ -384,17 +407,17 @@ public class BarcodeCopy extends JPanel implements ActionListener
               if (offset != null && !offset.trim().equals("") && !isNumeric(offset)){
                       throw new RuntimeException("offset dpi no es un numero.");
               }
-              
+              if (heightString != null && !heightString.equals("") && !isNumeric(heightString)){
+                      throw new RuntimeException("altura offset dpi no es un numero");
+              }
               for (int j=0; j<ids.length; j++){
                   if (!(ids[j].charAt(0) == 'P' || ids[j].charAt(0) == 'M' || ids[j].charAt(0) == 'C' || ids[j].charAt(0) == 'I' || ids[j].charAt(0) == 'A' || ids[j].charAt(0) == 'N'))
                       throw new RuntimeException("El ID " + id + " tiene que empezar con I,C,A,N,P, o M.");
-                  if (!ids[j].toUpperCase().equals(ids[j]))
-                      throw new RuntimeException("El ID " + id + " no puede contener letras minusculas.");
-                  if (ids.length == 10 && ids[j].charAt(0) != 'P' && (ids[j].charAt(8) != '-' || ids[j].length() != 10))
+                  if (ids[j].charAt(0) != 'P' && (ids[j].charAt(8) != '-' || ids[j].length() != 10))
                           throw new RuntimeException("El ID " + id + " no tiene un formato correcto.");
-                  if (ids[j].charAt(0) == 'P' && (ids[j].charAt(5) != '-' || ids[j].length() != 7))
+                  if (ids[j].charAt(0) == 'P' && (ids[j].charAt(6) != '-' || ids[j].length() != 8))
                       throw new RuntimeException("El ID " + id + " no tiene un formato correcto por PPD.");
-              }    
+              }   
           
           } catch (Exception ex){
               HandleError(ex); 
@@ -408,10 +431,12 @@ public class BarcodeCopy extends JPanel implements ActionListener
                           
                           Integer numCopiesInt = Integer.valueOf(numCopies.trim());
                           Integer offsetInt = null;
-                          if (offset != null && !offset.trim().equals(""))
+                          Integer heightInt  = null;
+                          if (offset != null && !offset.equals(""))
                               offsetInt  = Integer.valueOf(offset.trim());
-                          
-                          
+                          if (heightString != null && !heightString.equals(""))
+                              heightInt  = Integer.valueOf(heightString);
+
                           PrinterJob pj = PrinterJob.getPrinterJob();
                           pj.setPrintService(psZebra);
 
@@ -423,8 +448,11 @@ public class BarcodeCopy extends JPanel implements ActionListener
                           if (offsetInt != null)
                               pixelBufferToNextSticker = offsetInt.intValue(); 
                           
+                          int verticalOffset = 20;
+                          if (heightInt != null)
+                              verticalOffset = heightInt.intValue();
                           
-                          
+
                           if (checkbox.isSelected()){
 
                               SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy");
@@ -437,28 +465,33 @@ public class BarcodeCopy extends JPanel implements ActionListener
                                   }
                               }                           
                               
+                              
+                              int dateRowHeigt = verticalOffset + 68;
+                              int cripseRowHeight = verticalOffset + 87;
+                              int three65Row = verticalOffset + 106;
+                              
                               //dateRow
-                              labStuff += "\015\012A" + String.valueOf(p1Pos) + ",98,0,2,1,1,N,\"" + fecha.getText() + "\"\015\012";
-                              labStuff += "\015\012A" + String.valueOf(p1Pos + pixelBufferToNextSticker) + ",98,0,2,1,1,N,\"" + fecha.getText() + "\"\015\012";
-                              labStuff += "\015\012A" + String.valueOf(p1Pos + (pixelBufferToNextSticker*2)) + ",98,0,2,1,1,N,\"" + fecha.getText() + "\"\015\012";
+                              labStuff += "\015\012A" + String.valueOf(p1Pos) + "," + dateRowHeigt + ",0,2,1,1,N,\"" + fecha.getText() + "\"\015\012";
+                              labStuff += "\015\012A" + String.valueOf(p1Pos + pixelBufferToNextSticker) + "," + dateRowHeigt + ",0,2,1,1,N,\"" + fecha.getText() + "\"\015\012";
+                              labStuff += "\015\012A" + String.valueOf(p1Pos + (pixelBufferToNextSticker*2)) + "," + dateRowHeigt + ",0,2,1,1,N,\"" + fecha.getText() + "\"\015\012";
                               
                               //CRISPE row
-                              labStuff += "\015\012A" + String.valueOf(p1Pos) + ",117,0,2,1,1,N,\"C R I S P E\"\015\012";
-                              labStuff += "\015\012A" + String.valueOf(p1Pos + pixelBufferToNextSticker) + ",117,0,2,1,1,N,\"C R I S P E\"\015\012";
-                              labStuff += "\015\012A" + String.valueOf(p1Pos + (pixelBufferToNextSticker*2)) + ",117,0,2,1,1,N,\"C R I S P E\"\015\012";
+                              labStuff += "\015\012A" + String.valueOf(p1Pos) + "," + cripseRowHeight + ",0,2,1,1,N,\"C R I S P E\"\015\012";
+                              labStuff += "\015\012A" + String.valueOf(p1Pos + pixelBufferToNextSticker) + "," + cripseRowHeight + ",0,2,1,1,N,\"C R I S P E\"\015\012";
+                              labStuff += "\015\012A" + String.valueOf(p1Pos + (pixelBufferToNextSticker*2)) + "," + cripseRowHeight + ",0,2,1,1,N,\"C R I S P E\"\015\012";
                               
                               //356 row
-                              labStuff += "\015\012A" + String.valueOf(p1Pos) + ",136,0,2,1,1,N,\"3 5 6\"\015\012";
-                              labStuff += "\015\012A" + String.valueOf(p1Pos + pixelBufferToNextSticker) + ",136,0,2,1,1,N,\"3 5 6\"\015\012";
-                              labStuff += "\015\012A" + String.valueOf(p1Pos + (pixelBufferToNextSticker*2)) + ",136,0,2,1,1,N,\"3 5 6\"\015\012";
+                              labStuff += "\015\012A" + String.valueOf(p1Pos) + "," + three65Row + ",0,2,1,1,N,\"3 5 6\"\015\012";
+                              labStuff += "\015\012A" + String.valueOf(p1Pos + pixelBufferToNextSticker) + "," + three65Row + ",0,2,1,1,N,\"3 5 6\"\015\012";
+                              labStuff += "\015\012A" + String.valueOf(p1Pos + (pixelBufferToNextSticker*2)) + "," + three65Row + ",0,2,1,1,N,\"3 5 6\"\015\012";
 
                               
                           }                  
                           
                           //Barcode Row
-                          String createBarcodeString = "B" + String.valueOf(p1Pos) + ",30,0,1,1,6,40,B,\"" + id + "\"";
-                          createBarcodeString += "\015\012B" + String.valueOf(p1Pos + pixelBufferToNextSticker) + ",30,0,1,1,6,40,B,\"" + id + "\"";
-                          createBarcodeString += "\015\012B" + String.valueOf(p1Pos + (pixelBufferToNextSticker*2)) + ",30,0,1,1,6,40,B,\"" + id + "\"";
+                          String createBarcodeString = "B" + String.valueOf(p1Pos) + "," + verticalOffset + ",0,1,1,6,40,B,\"" + id + "\"";
+                          createBarcodeString += "\015\012B" + String.valueOf(p1Pos + pixelBufferToNextSticker) + "," + verticalOffset + ",0,1,1,6,40,B,\"" + id + "\"";
+                          createBarcodeString += "\015\012B" + String.valueOf(p1Pos + (pixelBufferToNextSticker*2)) + "," + verticalOffset + ",0,1,1,6,40,B,\"" + id + "\"";
                           
                           
                           StringBuffer myString = new StringBuffer("N\015\012" + createBarcodeString + labStuff + "\015\012P" + numCopiesInt.intValue() + "\015\012");
@@ -466,7 +499,9 @@ public class BarcodeCopy extends JPanel implements ActionListener
                           DocFlavor flavor2 = DocFlavor.BYTE_ARRAY.AUTOSENSE;
                           Doc doc2 = new SimpleDoc(myString.toString().getBytes(), flavor2, null);
                    
+                          //log EPL message:
                           //System.out.println(myString.toString());
+                          
                           DocPrintJob job = psZebra.createPrintJob();
                           PrintJobWatcher pjw  = new PrintJobWatcher(job);
                           job.print(doc2, null);
