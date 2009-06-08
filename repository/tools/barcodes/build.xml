@@ -24,7 +24,7 @@
 
     <target name="jar" depends="compile">
         <mkdir dir="build/jar"/>
-        <jar destfile="build/jar/BarcodeCopy.jar" basedir="build/classes">
+        <jar destfile="build/jar/BarcodeCopy1.0.jar" basedir="build/classes">
             <manifest>
                 <attribute name="Main-Class" value="barcodeCopy.BarcodeCopy"/>
             	<!--<attribute name="Class-Path" value="barcode4j.jar"/>-->
