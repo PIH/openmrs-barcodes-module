@@ -494,7 +494,7 @@ public class BarcodeCopy extends JPanel implements ActionListener
                           createBarcodeString += "\015\012B" + String.valueOf(p1Pos + (pixelBufferToNextSticker*2)) + "," + verticalOffset + ",0,1,1,6,40,B,\"" + id + "\"";
                           
                           
-                          StringBuffer myString = new StringBuffer("N\015\012" + createBarcodeString + labStuff + "\015\012P" + numCopiesInt.intValue() + "\015\012");
+                          StringBuffer myString = new StringBuffer("q1500\015\012N\015\012" + createBarcodeString + labStuff + "\015\012P" + numCopiesInt.intValue() + "\015\012");
                           
                           DocFlavor flavor2 = DocFlavor.BYTE_ARRAY.AUTOSENSE;
                           Doc doc2 = new SimpleDoc(myString.toString().getBytes(), flavor2, null);
