@@ -51,7 +51,7 @@ public class BarcodeCopy extends JPanel implements ActionListener
 
 
 {
-    
+
     
   final static long serialVersionUID = 23497343;  
   protected static JButton jbuttonClose;
@@ -411,12 +411,17 @@ public class BarcodeCopy extends JPanel implements ActionListener
                       throw new RuntimeException("altura offset dpi no es un numero");
               }
               for (int j=0; j<ids.length; j++){
-                  if (!(ids[j].charAt(0) == 'P' || ids[j].charAt(0) == 'M' || ids[j].charAt(0) == 'C' || ids[j].charAt(0) == 'I' || ids[j].charAt(0) == 'A' || ids[j].charAt(0) == 'N'))
-                      throw new RuntimeException("El ID " + id + " tiene que empezar con I,C,A,N,P, o M.");
-                  if (ids[j].charAt(0) != 'P' && (ids[j].charAt(8) != '-' || ids[j].length() != 10))
-                          throw new RuntimeException("El ID " + id + " no tiene un formato correcto.");
-                  if (ids[j].charAt(0) == 'P' && (ids[j].charAt(6) != '-' || ids[j].length() != 8))
-                      throw new RuntimeException("El ID " + id + " no tiene un formato correcto por PPD.");
+                  if (!(ids[j].charAt(0) == 'P' || ids[j].charAt(0) == 'M' || ids[j].charAt(0) == 'C' || ids[j].charAt(0) == 'I' || ids[j].charAt(0) == 'A' || ids[j].charAt(0) == 'N' || ids[j].charAt(0) == 'H'))
+                      throw new RuntimeException("El ID " + id + " tiene que empezar con I,C,A,N,P,H, o M.");
+                  if (ids[j].charAt(0) == 'H') {
+					  // Don't validate this for now
+				  }
+                  else {
+					  if (ids[j].charAt(0) != 'P' && (ids[j].charAt(8) != '-' || ids[j].length() != 10))
+							  throw new RuntimeException("El ID " + id + " no tiene un formato correcto.");
+					  if (ids[j].charAt(0) == 'P' && (ids[j].charAt(6) != '-' || ids[j].length() != 8))
+						  throw new RuntimeException("El ID " + id + " no tiene un formato correcto por PPD.");
+				  }
               }   
           
           } catch (Exception ex){
